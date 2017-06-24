@@ -10,6 +10,7 @@ import sys
 orig_stdout = sys.stdout
 list = []
 #comment
+#commment
 
 def get_output_path(original_path):
     split = re.split(r"\\", original_path)
