@@ -6,13 +6,7 @@ import sys
 # import MySQLdb # for later use
 
 
-# found = 0
-orig_stdout = sys.stdout
-list = []
-#comment
-#commment
-
-def get_output_path(original_path):
+def get_output_path_of_txt_file(original_path):
     split = re.split(r"\\", original_path)
     end = split.pop()
     pre_end = split.pop()
@@ -20,7 +14,7 @@ def get_output_path(original_path):
     return output_txt
 
 
-def get_output_dir(original_path):
+def get_output_dir_of_txt_file(original_path):
     split = re.split(r"\\", original_path)
     split.pop()
     pre_end = split.pop()
@@ -28,38 +22,38 @@ def get_output_dir(original_path):
     return output_txt
 
 
-def filter_beginning(input_dir):
+def filter_beginning(input_dir , unsuccessful_list):
     for subdir, dirs, files in os.walk(input_dir):
         for filename in files:
-            found = 0
+            found_sentence = 0
             if filename.endswith(".txt"):
-                path = os.path.join(input_dir, subdir, filename)
-                out = get_output_path(path)
-                out_dir = get_output_dir(path)
-                if os.path.exists(out_dir) == 0:
-                    os.mkdir(out_dir)
+                original_file_path = os.path.join(input_dir, subdir, filename)
+                path_to_txt_file = get_output_path_of_txt_file(original_file_path)
+                path_to_txt_file_dir = get_output_dir_of_txt_file(original_file_path)
+                if os.path.exists(path_to_txt_file_dir) == 0:
+                    os.mkdir(path_to_txt_file_dir)
                 try:
-                    with open(path) as f:
+                    with open(original_file_path) as f:
                         for line in f:
-                            if found == 1:
-                                g = open(out, 'w')
-                                sys.stdout = g
+                            if found_sentence == 1:
+                                output_file = open(path_to_txt_file, 'w')
+                                sys.stdout = output_file
                                 for row in f:
                                     print row
                                 break
-                            if word in line:
-                                found = 1
+                            if sentence_to_filrer in line:
+                                found_sentence = 1
                 except Exception as e:
-                    list.append(path)
+                    list.append(original_file_path)
                     print str(e)
 
 
 if __name__ == '__main__':
-
-    word = "יומן הרשת של פרויקט בן-יהודה"
+    orig_stdout = sys.stdout
+    unsuccessful_list = []
+    sentence_to_filrer = "יומן הרשת של פרויקט בן-יהודה"
     input_dir = r"C:\Users\yoav\Downloads\benyehuda_sep2016_dump_with_nikkud_utf8"
-    filter_beginning(input_dir=input_dir)
+    filter_beginning(input_dir=input_dir , unsuccessful_list=unsuccessful_list)
     sys.stdout.close()
     sys.stdout = orig_stdout
     print list
-    print "1"
