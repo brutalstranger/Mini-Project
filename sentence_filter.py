@@ -10,7 +10,7 @@ def get_output_path_of_txt_file(original_path):
     split = re.split(r"\\", original_path)
     end = split.pop()
     pre_end = split.pop()
-    output_txt = r"C:\Users\Daniel\Desktop\ben_yehuda" + "\\" + str(pre_end) + "\\" + str(end)
+    output_txt = output_dir + "\\" + str(pre_end) + "\\" + str(end)
     return output_txt
 
 
@@ -18,7 +18,7 @@ def get_output_dir_of_txt_file(original_path):
     split = re.split(r"\\", original_path)
     split.pop()
     pre_end = split.pop()
-    output_txt = r"C:\Users\Daniel\Desktop\ben_yehuda" + "\\" + str(pre_end)
+    output_txt = output_dir + "\\" + str(pre_end)
     return output_txt
 
 
@@ -75,7 +75,7 @@ def remove_letochen(output_dir):
 
 
 if __name__ == '__main__':
-    output_dir = r"C:\Users\Daniel\Desktop\ben_yehuda"
+    output_dir = r"C:\Users\yoav\Desktop\ben_yehuda\outputs"
     orig_stdout = sys.stdout
     unsuccessful_list = []
     sentence_to_filrer = "יומן הרשת של פרויקט בן-יהודה"
@@ -83,10 +83,10 @@ if __name__ == '__main__':
     tochen2 = "לתוכן" + "\n\n" + "הענינים"
 
 
-    input_dir = r"C:\Users\Daniel\Downloads\benyehuda_sep2016_dump_stripped_nikkud_utf8\benyehuda_sep2016_dump_stripped_nikkud_utf8"
+    input_dir = r"C:\Users\yoav\Downloads\benyehuda_sep2016_dump_with_nikkud_utf8"
     filter_beginning(input_dir=input_dir , unsuccessful_list = unsuccessful_list)
     sys.stdout = orig_stdout
     remove_letochen(output_dir)
     sys.stdout.close()
     sys.stdout = orig_stdout
-    # print unsuccessful_list
+    print unsuccessful_list
