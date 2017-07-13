@@ -17,15 +17,14 @@
         <script src="js/jquery.min.js"></script>
         <script src="js/bootstrap.min.js"></script>
         <script src="js/scripts.js"></script>
- 
   </head>
   
   <body>
 <div class = "page-header">
    
    <h1>
-     Ben Yehuda word word frequency checker
-      <small>Created by Ben Gurion University students</small>
+     Ben Yehuda word frequency checker
+      <small style="font-size:0.5em">Created by Ben Gurion University students</small>
    </h1>
    
 </div>
@@ -42,9 +41,6 @@
 				
 				<div class="collapse navbar-collapse" id="bs-example-navbar-collapse-1">
 					<ul class="nav navbar-nav">
-						<li class="active">
-							<a href="#">Links</a>
-						</li>
 						<li>
 							<a target="_blank" href="http://benyehuda.org/">Ben Yehuda Project</a>
 						</li>
@@ -62,9 +58,6 @@
 							<ul class="dropdown-menu">
 								<li>
 									<a href="#">Action</a>
-								</li>
-								<li>
-									<a href="#">Another action</a>
 								</li>
 
 								<li class="divider">
@@ -85,10 +78,19 @@
 
 <form class="navbar-form navbar-left" role="search">
             <div class="form-group">
-                    <input class="form-control" type="text">
-                    <input class="form-control" type="text">
+                    <input class="form-control" type="text" id="txtInput1">
+                    <input class="form-control" type="text" id="txtInput2">
+
+					<button type="button"  class="btn btn-default"  onclick="runSearch()">Submit</button>
             </div> 
-                    <button type="button"  class="btn btn-default"  onclick="runSearch()">Submit</button>
+                    
+					<div id="txtHint"><b>Results will be listed here...</b></div>
+					<p></p>
+					<p></p>
+					<p></p>
+					<div id="debug">  <b>JavaScript Debug:</b>
+					<br />
+					</div>
 </form>
 
 <p id="demo"></p>
