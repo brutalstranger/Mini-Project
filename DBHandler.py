@@ -142,7 +142,7 @@ if __name__ == '__main__':
     db = MySQLdb.connect(host="localhost",  # your host, usually localhost
                          user="root",  # your username
                          passwd="1234",  # your password
-                         db="YOAV")
+                         db="root")
     fill_in_dict()
 
     # create_main_table()
