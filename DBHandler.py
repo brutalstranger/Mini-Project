@@ -84,12 +84,14 @@ def select_query():
     f = open(path , 'w')
     sys.stdout = f
     print "*********************  main ***************************"
-    sql = "select * from main;"
+    sql = "select * from main"
     cur = db.cursor()
     cur.execute(sql)
     results = cur.fetchall()
     for row in results:
-        print row
+        print row[0]
+        print row[1]
+        print row[2]
 
     sys.stdout = original_stdout
 
@@ -143,10 +145,6 @@ if __name__ == '__main__':
                          user="root",  # your username
                          passwd="1234",  # your password
                          db="root")
-    fill_in_dict()
 
-    # create_main_table()
-    # create_second_table()
-    get_words_from_txt()
-    # select_query()
+    select_query()
 

@@ -1,46 +1,35 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-
-Path_to_csv = r"C:\Users\yoav\Desktop\DB.csv"
-
 import csv
+import unicodedata
+Path_to_csv = r"C:\Users\yoav\Downloads\Ben_Yehuda - Sheet1.tsv"
+
+def get_author_year_from_csv(author):
+    with open(Path_to_csv, 'r') as f:
+        reader = csv.reader(f , dialect="excel-tab")
+        i = 0
+        for row in reader:
+            if i == 0:
+                i += 1
+                pass
+            if(row[0] != author):
+                pass
+            else:
+                value = int(row[2]) + int(row[3])
+                return value/2
+
+def get_hebrew_author(author):
+    with open(Path_to_csv, 'rU') as f:
+        reader = csv.reader(f, dialect=csv.excel_tab)
+        for row in reader:
+            if row[0] != author:
+                pass
+            else:
+                print row[1]
 import sys
-import matplotlib.pyplot as plt
+get_hebrew_author("feierberg")
 
-
-temp = []
-setDB = {}
-dict = {'1793': 10, '1920': 7, '1599': 15 , '1800' : 30}
-
-
-
-lists = sorted(dict.items()) # sorted by key, return a list of tuples
-
-x, y = zip(*lists) # unpack a list of pairs into two tuples
-
-plt.plot(x, y)
-plt.show()
 #
-# plt.bar(range(len(dict)), dict.values(), align='center')
-# plt.xticks(range(len(dict)), dict.keys())
-#
-# plt.show()
-
-# with open(Path_to_csv, 'r+') as f:
-#     reader = csv.reader(f)
-#     i = 0
-#     for row in reader:
-#         if i == 0:
-#             pass
-#         else:
-#             value = int(row[2])
-#             print value
-#             temp.append(value)
-#         i+=1
-# #
-# #         # for cell in row:
-# #         #    rowBuilder = rowBuilder + str(cell) + ","
-# #         # print rowBuilder[:-1]
-#
-# # pyplot.plot(range(len(temp)), temp)
-# # pyplot.show()
+#         # for cell in row:
+#         #    rowBuilder = rowBuilder + str(cell) + ","
+#         # print rowBuilder[:-1]

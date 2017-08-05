@@ -3,10 +3,8 @@
 
 import csv
 import MySQLdb
-import unidecode
-import unicodedata
 from BeautifulSoup import BeautifulSoup
-
+import os
 
 def strip_nikud(word):
     soup = BeautifulSoup(word)
@@ -29,16 +27,16 @@ def create_table():
               PRIMARY KEY(word,year))"""
     cur.execute(sql)
 
+
 def getWords(path):
 
     with open(path) as tsv:
         wordArray=list()
-        for line in csv.reader(tsv, dialect="excel-tab"): #You can also use delimiter="\t" rather than giving a dialect
+        for line in csv.reader(tsv, dialect="excel-tab"): #we can also use delimiter="\t" rather than giving a dialect
             try:
                 word = line[0].split()
                 clean_word = strip_nikud(word[2])
                 if len(clean_word) > 1 :
-                    # if word[2] == "###NUMBER###":
                     wordArray.append(clean_word)
             except:
                 pass
@@ -56,6 +54,39 @@ def insert_to_main(word , year):
     cur.execute(sql)
     db.commit()
 
+
+def get_new_title(title):
+    title_list = str(title).split(".")
+    new_title = title_list.__getitem__(0) + "_new." + title_list.__getitem__(1)
+    return new_title
+
+
+def get_new_path(path):
+    path_splitted = str(path).split("\\")
+    path_len = path_splitted.__len__()
+    print str(path_len)
+    title = path_splitted.__getitem__(path_len-1)
+    print title
+    new_path = ""
+    for word in path_splitted:
+        if word.endswith(".txt"):
+            new_path = new_path + get_new_title(word)
+        else:
+            new_path = new_path + word + os.sep
+    return new_path
+
+def move_clean_words_to_output_file(path):
+    for subdir, dirs, files in os.walk(path):
+        for file in files:
+            filepath = subdir + os.sep + file
+            if filepath.endswith(".txt"):
+                new_path = get_new_path(filepath)
+                open(new_path , 'w')
+                words = list(getWords(filepath))
+
+
+
+
 if __name__ == '__main__':
 
     db = MySQLdb.connect(host="localhost",  # your host, usually localhost
@@ -71,12 +102,12 @@ if __name__ == '__main__':
     # sys.stdout = file
 
     array = getWords(r'C:\cs\tagger.ner\output\adam_hacohen\meixal_dimah.txt')
-    for word in array:
-        print word
-        insert_to_main(word,1900)
+    # for word in array:
+    #     print word
+    #     insert_to_main(word,1900)
 
-    cur = db.cursor()
-    sql = '''select * from main where word="אשכח"'''
-    cur.execute(sql)
-    for row in cur.fetchall():
-        print row
+    # cur = db.cursor()
+    # sql = '''select * from main;'''
+    # cur.execute(sql)
+    # for row in cur.fetchall():
+    #     print str(row[0]) +","+ str(row[1]) +","+ str(row[2])
