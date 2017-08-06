@@ -154,7 +154,7 @@ function createLineChart(data) {
 nv.addGraph(function() {
 		//data_info = [minX, maxX, minY, maxY , groupcolour[] ]
   var chart = nv.models.lineChart()
-                .margin({top: 20, right: 20, bottom: 20, left: 20})  //Adjust chart margins to give the x-axis some breathing room.
+                .margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
                 .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
                 .duration(350)  //how fast do you want the lines to transition?
                 .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
@@ -189,7 +189,7 @@ nv.addGraph(function() {
 function createScatterChart(data){
 	nv.addGraph(function() {
   var chart = nv.models.scatterChart()
-				.margin({top: 20, right: 20, bottom: 20, left: 20})  //Adjust chart margins to give the x-axis some breathing room.
+				.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
                 .showDistX(true)    //showDist, when true, will display those little distribution lines on the axis.
                 .showDistY(true)
                 .duration(350)
