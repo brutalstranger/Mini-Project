@@ -9,9 +9,6 @@
 function runSearch() {
   var searchTxt1 = $("#txtInput1").val();
   var searchTxt2 = $("#txtInput2").val();
-//document.getElementById("debug").innerHTML += "Starting javascript runSearch function.<br />";
-//document.getElementById("debug").innerHTML += "str1 is: " + searchTxt1 + "</br>" ;
-//document.getElementById("debug").innerHTML += "str2 is: " + searchTxt2 + "</br>";
 console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
 	
 	//Check input validity
@@ -53,14 +50,9 @@ console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = 
     })
 }
 
-/* line: 0	"2"
-1	"ן"
-2	"1900"
-3	"16"
+/**
+*makes data in chart [{x:__ , y: ___} ... {x:__ y: __ }] format
 */
-const YEAR_LOC = 2;
-const WORD_LOC = 1;
-const NUMBER_LOC = 3;
 function getMyDataReady(array) {
 	var series = [];
 	for(var i =0; i <array.length; i ++) {
@@ -83,19 +75,11 @@ function getMyDataReady(array) {
 		{
 			key: "Series #2",
 			values: series[1],
-			color: "#00b33c"
+			color: "#63edd6"
 		}
 	];
 }
 
-function IsJsonString(str) {
-    try {
-        JSON.parse(str);
-    } catch (e) {
-        return false;
-    }
-    return true;
-}
 
 	/**
 	* TODO: 
@@ -104,11 +88,12 @@ function IsJsonString(str) {
 	function buildGraph(resultsArr) {
 		console.log("js: started buildGraph ");
 		var graphData = getMyDataReady(resultsArr);
-		console.log("graphData = " + graphData);			
+		for(var t=0 ; t < graphData.length ; t++)
+			console.log("graphData["+ t + "] = %o" ,graphData[t]);			
 		createBubbleChart(graphData);
 	}
 	
-	//makes data in chart [{x:__ , y: ___} ... {x:__ y: __ }] format
+	
 
 
 /*
@@ -132,32 +117,31 @@ Format of data :
 	
 */
 function createLineChart(data) {
-
 nv.addGraph(function() {
+		var data_info = getMaxs(data); // = [minX, maxX, minY, maxY , groupcolour[] ]
+		
   var chart = nv.models.lineChart()
-                .margin({top: 30, right: 60, bottom: 50, left: 70})  //Adjust chart margins to give the x-axis some breathing room.
+                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
                 .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
-                .duration(350)  //how fast do you want the lines to transition? 
+                .duration(350)  //how fast do you want the lines to transition?
                 .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
                 .showYAxis(true)        //Show the y-axis
                 .showXAxis(true)        //Show the x-axis
-	;
+			//	.forceY([0, data_info[maxY_LOC]])
+  ;
 
   chart.xAxis     //Chart x-axis settings
-      .axisLabel("Year")
-      .tickFormat(d3.format('04d'))
-	;
+      .axisLabel('Year')
+      .tickFormat(d3.format('d'));
 
   chart.yAxis     //Chart y-axis settings
-      .axisLabel("Mentions")
-      .tickFormat(d3.format('d'))
-	  
-	;
+      .axisLabel('Number of Mentions')
+      .tickFormat(d3.format('d'));
 
   /* Done setting the chart up? Time to render it!*/
   var myData = sinAndCos();   //You need data...
 
-  d3.select("svg")    //Select the <svg> element you want to render the chart in.   
+  d3.select('svg')    //Select the <svg> element you want to render the chart in.   
       .datum(myData)         //Populate the <svg> element with chart data...
       .call(chart);          //Finally, render the chart!
 
@@ -165,10 +149,24 @@ nv.addGraph(function() {
   nv.utils.windowResize(function() { chart.update() });
   return chart;
 });
+
+
 }
 
-function createBubbleChart(data){
-	var groupcolour = [];
+
+
+const minX_LOC = 0;
+const maxX_LOC = 1;
+const minY_LOC = 2;
+const maxY_LOC = 3;
+const colors_LOC = 4;
+/**
+* Receives data 
+* Returns [minX, maxX, minY, maxY , groupcolor[] ]
+*/
+function getMaxs(data)
+{
+	var groupcolor = [];
 	var maxX = Number.NEGATIVE_INFINITY;
 	var minX = Number.POSITIVE_INFINITY;
 	var maxY = Number.NEGATIVE_INFINITY;
@@ -186,20 +184,26 @@ function createBubbleChart(data){
 		temp = d3.min(data[i].values, function (d) { return +d.y; });
 		if(minY > temp)
 			minY = temp;
-		groupcolour[i] = data[i].color;
+		groupcolor[i] = data[i].color;
   }
 
 	console.log("X: " + minX + "-" + maxX);
 	console.log("X: " + minY + "-" + maxY);
+	return [minX, maxX, minY, maxY , groupcolor];
+}
+
+function createBubbleChart(data){
+	
+	var data_info = getMaxs(data); // = [minX, maxX, minY, maxY , groupcolour[] ]
 	
 	nv.addGraph(function() {
   var chart = nv.models.scatterChart()
                 .showDistX(true)    //showDist, when true, will display those little distribution lines on the axis.
                 .showDistY(true)
                 .duration(350)
-                .color(groupcolour)
-				.forceY([0,maxY])
-				.forceX([minX,maxX])
+                .color(data[colors_LOC])
+				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
+				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
 				;
 
   //Configure how the tooltip looks.
@@ -225,6 +229,16 @@ function createBubbleChart(data){
 });
 
 }
+
+function IsJsonString(str) {
+    try {
+        JSON.parse(str);
+    } catch (e) {
+        return false;
+    }
+    return true;
+}
+
 
 function sinAndCos() {
   var sin = [],sin2 = [],
