@@ -23,7 +23,7 @@ if (!$con) { // Check connection
 
 $status = mysqli_select_db($con,$db_database);
 $sql1="SELECT * FROM mini.words WHERE word = 'חיים' ;" ; // WHERE id = '".$q."'";
-$sql2="SELECT * FROM mini.words WHERE word = 'אמת' ;" ; // WHERE id = '".$q."'";
+$sql2="SELECT * FROM mini.words WHERE word = 'אהבה' ;" ; // WHERE id = '".$q."'";
 $array_of_results = array(0 => array(),
 						1 => array());
 

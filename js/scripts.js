@@ -1,21 +1,31 @@
 // Empty JS for your own code to be here
 
-    /**
-     * TODO:
-     * 1. Search for data related to first and second words
-     * 2. Create Graph 
-     * 3. Add data of both words to graph
-     **/
+/**
+* Globals
+* searchTxt1 = 1st word to search for
+* searchTxt2 = 2nd word to search for
+* chart_types = keep all chart types here
+* data_info = [minX, maxX, minY, maxY , groupcolour[] ] use to render graph later
+*/
+var searchTxt1;
+var searchTxt2;
+var chart_types = ["LineChart", "ScatterChart" , "MultiBarChart"];
+var data_info = []; //= [minX, maxX, minY, maxY , groupcolour[] ]
+    
+/**
+* Main search function called from html
+**/
 function runSearch() {
-  var searchTxt1 = $("#txtInput1").val();
-  var searchTxt2 = $("#txtInput2").val();
-console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
 	
-	//Check input validity
-	 if (searchTxt1.length < 2 || searchTxt2.length < 2) {
-        document.getElementById("results_div").innerHTML = "Please fill both text boxes </br> Search terms need to be at least 2 characters each.";
-        return;
-    } 
+	
+	searchTxt1 = $("#txtInput1").val();
+	searchTxt2 = $("#txtInput2").val();
+	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
+	
+	if (searchTxt1.length < 2 || searchTxt2.length < 2) {//Check input validity
+		document.getElementById("results_div").innerHTML = "Please fill both text boxes </br> Search terms need to be at least 2 characters each.";
+		return;
+	} 
 	else{
 	console.log("search terms ok");}
 
@@ -29,20 +39,18 @@ console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = 
 		success : function (resultsArr) {
 			
 			if(resultsArr != null){
-			console.log(Array.isArray(resultsArr));
-			console.log(IsJsonString(JSON.stringify(resultsArr)));
-			console.log(resultsArr);
-			for(var i =0;i < resultsArr.length ;i++)
-			{
-			  var item = resultsArr[i];
-			console.log(item);			
+				console.log(Array.isArray(resultsArr));
+				console.log(IsJsonString(JSON.stringify(resultsArr)));
+				console.log(resultsArr);
+				for(var i =0;i < resultsArr.length ;i++)
+				{
+				  var item = resultsArr[i];
+				console.log(item);			
+				}
+				buildGraph(resultsArr);
+				
 			}
-			buildGraph(resultsArr);
-			
-			}
-			else{
-				error("ajax data null or undefined");
-			}
+			else{error("ajax data null or undefined");}
 		},
 		error : function () {
 		   alert("error: ajax get error");
@@ -55,6 +63,7 @@ console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = 
 */
 function getMyDataReady(array) {
 	var series = [];
+	var shapes = ['circle', 'triangle-up', 'cross', 'triangle-down', 'diamond', 'thin-x', 'square'];
 	for(var i =0; i <array.length; i ++) {
 		series.push([]);
 		for(var z =0; z <array[i].length; z ++) {
@@ -62,39 +71,60 @@ function getMyDataReady(array) {
 			var item = array[i][z];
 			//console.log(array[i])
 			series[i].push({
-				x: item.year_creation, y: item.num_of_mentions
+				x: item.year_creation, y: item.num_of_mentions , size: item.num_of_mentions ,shape: shapes[i]
 			});
 		}
+		series[i].sort(function(a, b){return a.x-b.x});
 	}
 	return [
 		{
-			key: "Series #1",
+			key: searchTxt1,
 			values: series[0],
-			color: "#cc99ff"
+			color: "#cc99ff",
+			nonStackable: false
+			
 		},
 		{
-			key: "Series #2",
+			key: searchTxt2,
 			values: series[1],
-			color: "#63edd6"
+			color: "#63edd6",
+			nonStackable: false
 		}
 	];
 }
 
 
 	/**
-	* TODO: 
-	* Get graph type from html controls
+	* buildGraph 
+	* Receives js array
+	* gets graphData from it
+	* gets max/min values of graph data into global data_info
+	* gets type_of_chart from html
+	* switch on type of graph and build
 	*/
 	function buildGraph(resultsArr) {
 		console.log("js: started buildGraph ");
 		var graphData = getMyDataReady(resultsArr);
 		for(var t=0 ; t < graphData.length ; t++)
 			console.log("graphData["+ t + "] = %o" ,graphData[t]);			
-		createBubbleChart(graphData);
+		var type_of_chart = $("input[type='radio'][name='radio_charts']:checked").val();
+		data_info = getMaxs(graphData); //data_info = [minX, maxX, minY, maxY , groupcolor[] ]
+		var svg = d3.select("svg"); //clear current chart
+		svg.selectAll("*").remove(); //clear current chart
+		
+		switch(type_of_chart)
+		{
+			case "LineChart":
+			createLineChart(graphData);
+			break;
+			case "ScatterChart":
+			createScatterChart(graphData);
+			break;
+			case "MultiBarChart":
+			createMultiBarChart(graphData);
+			break;
+		}
 	}
-	
-	
-
 
 /*
 Format of data : 
@@ -116,18 +146,23 @@ Format of data :
 	];
 	
 */
+
+/**
+ * Region graph generators
+ */
 function createLineChart(data) {
 nv.addGraph(function() {
-		var data_info = getMaxs(data); // = [minX, maxX, minY, maxY , groupcolour[] ]
-		
+		//data_info = [minX, maxX, minY, maxY , groupcolour[] ]
   var chart = nv.models.lineChart()
-                .margin({left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+                .margin({top: 20, right: 20, bottom: 20, left: 20})  //Adjust chart margins to give the x-axis some breathing room.
                 .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
                 .duration(350)  //how fast do you want the lines to transition?
                 .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
                 .showYAxis(true)        //Show the y-axis
                 .showXAxis(true)        //Show the x-axis
-			//	.forceY([0, data_info[maxY_LOC]])
+				.color(data_info[colors_LOC])
+				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
+				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
   ;
 
   chart.xAxis     //Chart x-axis settings
@@ -139,7 +174,7 @@ nv.addGraph(function() {
       .tickFormat(d3.format('d'));
 
   /* Done setting the chart up? Time to render it!*/
-  var myData = sinAndCos();   //You need data...
+  var myData = data;   //You need data...
 
   d3.select('svg')    //Select the <svg> element you want to render the chart in.   
       .datum(myData)         //Populate the <svg> element with chart data...
@@ -149,59 +184,16 @@ nv.addGraph(function() {
   nv.utils.windowResize(function() { chart.update() });
   return chart;
 });
-
-
 }
 
-
-
-const minX_LOC = 0;
-const maxX_LOC = 1;
-const minY_LOC = 2;
-const maxY_LOC = 3;
-const colors_LOC = 4;
-/**
-* Receives data 
-* Returns [minX, maxX, minY, maxY , groupcolor[] ]
-*/
-function getMaxs(data)
-{
-	var groupcolor = [];
-	var maxX = Number.NEGATIVE_INFINITY;
-	var minX = Number.POSITIVE_INFINITY;
-	var maxY = Number.NEGATIVE_INFINITY;
-	var minY = Number.POSITIVE_INFINITY;
-	  for (var i = 0; i < data.length; i++) {
-		var temp = d3.max(data[i].values, function (d) { return +d.x; });
-		if(maxX < temp)
-			maxX = temp;
-		temp = d3.min(data[i].values, function (d) { return +d.x; });
-		if(minX > temp)
-			minX = temp;
-		temp = d3.max(data[i].values, function (d) { return +d.y; });
-		if(maxY < temp)
-			maxY = temp;
-		temp = d3.min(data[i].values, function (d) { return +d.y; });
-		if(minY > temp)
-			minY = temp;
-		groupcolor[i] = data[i].color;
-  }
-
-	console.log("X: " + minX + "-" + maxX);
-	console.log("X: " + minY + "-" + maxY);
-	return [minX, maxX, minY, maxY , groupcolor];
-}
-
-function createBubbleChart(data){
-	
-	var data_info = getMaxs(data); // = [minX, maxX, minY, maxY , groupcolour[] ]
-	
+function createScatterChart(data){
 	nv.addGraph(function() {
   var chart = nv.models.scatterChart()
+				.margin({top: 20, right: 20, bottom: 20, left: 20})  //Adjust chart margins to give the x-axis some breathing room.
                 .showDistX(true)    //showDist, when true, will display those little distribution lines on the axis.
                 .showDistY(true)
                 .duration(350)
-                .color(data[colors_LOC])
+                .color(data_info[colors_LOC])
 				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
 				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
 				;
@@ -229,7 +221,87 @@ function createBubbleChart(data){
 });
 
 }
+function createMultiBarChart(data){
+ nv.addGraph({
+        generate: function() {
+            var width = nv.utils.windowSize().width,
+                height = nv.utils.windowSize().height;
+            var chart = nv.models.multiBarChart()
+                .width(width)
+                .height(height)
+                .stacked(false)
+				.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+                .showYAxis(true)        //Show the y-axis
+                .showXAxis(true)        //Show the x-axis
+				.color(data_info[colors_LOC])
+				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
+				//.xDomain([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
+				//.tooltip.contentGenerator(function(key) {return '<h3>' + key + '</h3>';})
+                ;
+            chart.dispatch.on('renderEnd', function(){
+                console.log('Render Complete');
+            });
+            var svg = d3.select('svg').datum(data);
+            console.log('calling chart');
+            svg.transition().duration(0).call(chart);
+            return chart;
+        },
+        callback: function(graph) {
+            nv.utils.windowResize(function() {
+                var width = nv.utils.windowSize().width;
+                var height = nv.utils.windowSize().height;
+                graph.width(width).height(height);
+                d3.select('#test1 svg')
+                    .attr('width', width)
+                    .attr('height', height)
+                    .transition().duration(0)
+                    .call(graph);
+            });
+        }
+    });
+}
 
+const minX_LOC = 0;
+const maxX_LOC = 1;
+const minY_LOC = 2;
+const maxY_LOC = 3;
+const colors_LOC = 4;
+/**
+* Receives data 
+* Returns [minX, maxX, minY, maxY , groupcolor[] ]
+*/
+function getMaxs(data){
+	var groupcolor = [];
+	var maxX = Number.NEGATIVE_INFINITY;
+	var minX = Number.POSITIVE_INFINITY;
+	var maxY = Number.NEGATIVE_INFINITY;
+	var minY = Number.POSITIVE_INFINITY;
+	  for (var i = 0; i < data.length; i++) {
+		var temp = d3.max(data[i].values, function (d) { return +d.x; });
+		if(maxX < temp)
+			maxX = temp;
+		temp = d3.min(data[i].values, function (d) { return +d.x; });
+		if(minX > temp)
+			minX = temp;
+		temp = d3.max(data[i].values, function (d) { return +d.y; });
+		if(maxY < temp)
+			maxY = temp;
+		temp = d3.min(data[i].values, function (d) { return +d.y; });
+		if(minY > temp)
+			minY = temp;
+		groupcolor[i] = data[i].color;
+  }
+
+	console.log("X: " + minX + "-" + maxX);
+	console.log("X: " + minY + "-" + maxY);
+	return [minX, maxX, minY, maxY , groupcolor];
+}
+
+/**
+* helpers
+*/
 function IsJsonString(str) {
     try {
         JSON.parse(str);
