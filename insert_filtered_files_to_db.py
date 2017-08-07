@@ -7,7 +7,7 @@ import os
 
 def create_table():
     cur = db.cursor()
-    sql = """CREATE TABLE IF NOT EXISTS main (
+    sql = """CREATE TABLE IF NOT EXISTS texts (
              word varchar(255) NOT NULL,
              year int,
              count INT,
@@ -19,7 +19,7 @@ def create_table():
 
 def insert_word_to_main(word, year, author, title):
     cur = db.cursor()
-    sql = "INSERT IGNORE INTO main (word, year, count , author , text_title) VALUES('" + word + "'," + str(year) + \
+    sql = "INSERT IGNORE INTO texts (word, year, count , author , text_title) VALUES('" + word + "'," + str(year) + \
           ", 1 ,'" + str(author) +"','" + str(title) +"')" + "ON DUPLICATE KEY UPDATE count=count+1"
     print sql
     cur.execute(sql)
@@ -71,19 +71,24 @@ def strip_commas(word):
     return word
 
 def insert_all_words_to_db(path_to_txt_dir, path_to_csv):
+    i = 0
     for subdir, dirs, files in os.walk(path_to_txt_dir):
         for file in files:
             file_path = subdir + os.sep + file
             # iterate only txt files
             if file_path.endswith(".txt") :
-                print file_path
-                author = get_author_from_text(file_path)
-                heb_author = get_hebrew_author(author , path_to_csv)
-                heb_author = strip_commas(heb_author)
-                year = get_author_year_from_csv(author , path_to_csv)
-                title = get_text_title(file_path)
-                for word in open(file_path , 'r'):
-                    insert_word_to_main(word , year , heb_author , title)
+                if i % 2 == 0 :
+                    print file_path
+                    author = get_author_from_text(file_path)
+                    heb_author = get_hebrew_author(author , path_to_csv)
+                    heb_author = strip_commas(heb_author)
+                    year = get_author_year_from_csv(author , path_to_csv)
+                    title = get_text_title(file_path)
+                    for word in open(file_path , 'r'):
+                        word_length = len(word)
+                        if word_length > 5:
+                            insert_word_to_main(word , year , heb_author , title)
+                    i += 1
 
 
 
@@ -93,5 +98,5 @@ if __name__ == '__main__':
                          user="root",  # your username
                          passwd="1234",  # your password
                          db="root")
-    # create_table()
+    create_table()
     insert_all_words_to_db(r"C:\Users\yoav\Desktop\ben_yehuda\output" , r"C:\Users\yoav\Downloads\Ben_Yehuda - Sheet1.tsv")
