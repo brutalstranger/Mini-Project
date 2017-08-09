@@ -28,8 +28,8 @@ $status = mysqli_select_db($con,$db_database);
 if(!$status)
 	die('searcher.php: mysqli_select_db failed!');
 
-$sql1="SELECT * FROM mini.words WHERE word = '".$word1."';" ; // first sql query
-$sql2="SELECT * FROM mini.words WHERE word = '".$word2."' ;" ; // second sql query
+$sql1="SELECT * FROM mini.wordsby WHERE word = '".$word1."';" ; // first sql query
+$sql2="SELECT * FROM mini.wordsby WHERE word = '".$word2."' ;" ; // second sql query
 //$sql1="SELECT * FROM mini.word_ext WHERE word = '".$word1."';" ; // first sql query
 //$sql2="SELECT * FROM mini.word_ext WHERE word = '".$word2."' ;" ; // second sql query
 

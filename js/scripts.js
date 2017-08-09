@@ -95,7 +95,7 @@ function getMyDataReady(array) {
 		for(var z =0; z <array[i].length; z ++) {	
 			var item = array[i][z];
 			series[i].push({
-				x: item.year_creation, y: item.num_of_mentions , size: item.num_of_mentions ,shape: shapes[i]
+				x: item.year, y: item.count , size: item.count ,shape: shapes[i]
 			});
 		}
 		series[i].sort(function(a, b){return a.x-b.x}); //sort by year for graph view
