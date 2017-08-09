@@ -16,18 +16,22 @@ var data_info = []; //= [minX, maxX, minY, maxY , groupcolour[] ]
 * Main search function called from html
 **/
 function runSearch() {
-	
-	
 	searchTxt1 = $("#txtInput1").val();
 	searchTxt2 = $("#txtInput2").val();
 	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
 	
-	if (searchTxt1.length < 2 || searchTxt2.length < 2) {//Check input validity
-		document.getElementById("results_div").innerHTML = "Please fill both text boxes </br> Search terms need to be at least 2 characters each.";
-		return;
+	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 	||
+			(searchTxt1.length == 0 && searchTxt2.length > 2) 	||
+			(searchTxt1.length > 2 && searchTxt2.length == 0)	)) {//Check input
+	console.log("bad input");
+	document.getElementById('help_div').style.visibility = 'visible';
+	document.getElementById("help_div").innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
+	return;
 	} 
 	else{
-	console.log("search terms ok");}
+	document.getElementById('results_div').style.visibility = 'visible';
+	document.getElementById('help_div').style.visibility = 'hidden';
+	console.log("search terms ok");
 
 	 $.ajax({
 		url : 'searcher.php',
@@ -39,14 +43,16 @@ function runSearch() {
 		success : function (resultsArr) {
 			
 			if(resultsArr != null){
-				console.log(Array.isArray(resultsArr));
-				console.log(IsJsonString(JSON.stringify(resultsArr)));
-				console.log(resultsArr);
+				console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
+				console.log("resultArray: ");
 				for(var i =0;i < resultsArr.length ;i++)
 				{
-				  var item = resultsArr[i];
+				var item = resultsArr[i];
 				console.log(item);			
 				}
+				
+
+				
 				buildGraph(resultsArr);
 				
 			}
@@ -57,6 +63,7 @@ function runSearch() {
 		}
     })
 }
+	}
 
 /**
 *makes data in chart [{x:__ , y: ___} ... {x:__ y: __ }] format

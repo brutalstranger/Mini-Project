@@ -5,6 +5,8 @@ ini_set("display_errors", 1); //debug
 $word1 = strval($_GET['searchWord1']);
 $word2 = strval($_GET['searchWord2']);
 
+$number_of_words = 2; //can be dynamic in future (fix here)
+
 $db_host        = 'localhost';
 $db_user        = 'root';
 $db_pass        = '1234';
@@ -22,40 +24,41 @@ if (!$con) { // Check connection
 }
 
 $status = mysqli_select_db($con,$db_database);
-$sql1="SELECT * FROM mini.words WHERE word = 'חיים' ;" ; // WHERE id = '".$q."'";
-$sql2="SELECT * FROM mini.words WHERE word = 'אהבה' ;" ; // WHERE id = '".$q."'";
-$array_of_results = array(0 => array(),
-						1 => array());
 
-for($i = 0 ; $i<2 ; $i++){
+if(!$status)
+	die('searcher.php: mysqli_select_db failed!');
+
+//$sql1="SELECT * FROM mini.words WHERE word = '".$word1."';" ; // first sql query
+//$sql2="SELECT * FROM mini.words WHERE word = '".$word2."' ;" ; // second sql query
+$sql1="SELECT * FROM mini.word_ext WHERE word = '".$word1."';" ; // first sql query
+$sql2="SELECT * FROM mini.word_ext WHERE word = '".$word2."' ;" ; // second sql query
+
+$array_of_results = array(	0 => array(),
+							1 => array()); //init results array
+$rowcount = 0;
+
+for($i = 0 ; $i<$number_of_words ; $i++){
 	if($i)
-$result = mysqli_query($con,$sql2);
+		$result = mysqli_query($con,$sql2); // i = 1
 	else
- $result = mysqli_query($con,$sql1);
+		$result = mysqli_query($con,$sql1); // i = 0
+$data_array = mysqli_fetch_all($result , MYSQLI_ASSOC); //mysqli_fetch_array($result , MYSQLI_NUM);
+if($i)
+	$array_of_results[$i] = $data_array;
+else
+	$array_of_results[$i] = $data_array;
 
-$rowcount=mysqli_num_rows($result);
-
- if($rowcount == 0){
-        echo 'No results';
+$rowcount += mysqli_num_rows($result); //query error check
+ if($rowcount == 0 && $i == $number_of_words){ //no results from all queries
+        echo ('No results, sql1 = '.$sql1.", sql2 = ".$sql2);
 		exit(); //check this
     }
-
-$data_array = mysqli_fetch_all($result , MYSQLI_ASSOC); //mysqli_fetch_array($result , MYSQLI_NUM);
-
-
-if($i)
-	$array_of_results[1] = $data_array;
-else
-	$array_of_results[0] = $data_array;
 }
 
 mysqli_free_result($result);
 
 mysqli_close($con);
-/*
-TODO: 
-change later to send multiple arrays
-*/
+
 header("Content-Type: application/json");
 echo json_encode($array_of_results);
 ?>
