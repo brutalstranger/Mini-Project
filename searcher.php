@@ -28,10 +28,10 @@ $status = mysqli_select_db($con,$db_database);
 if(!$status)
 	die('searcher.php: mysqli_select_db failed!');
 
-//$sql1="SELECT * FROM mini.words WHERE word = '".$word1."';" ; // first sql query
-//$sql2="SELECT * FROM mini.words WHERE word = '".$word2."' ;" ; // second sql query
-$sql1="SELECT * FROM mini.word_ext WHERE word = '".$word1."';" ; // first sql query
-$sql2="SELECT * FROM mini.word_ext WHERE word = '".$word2."' ;" ; // second sql query
+$sql1="SELECT * FROM mini.words WHERE word = '".$word1."';" ; // first sql query
+$sql2="SELECT * FROM mini.words WHERE word = '".$word2."' ;" ; // second sql query
+//$sql1="SELECT * FROM mini.word_ext WHERE word = '".$word1."';" ; // first sql query
+//$sql2="SELECT * FROM mini.word_ext WHERE word = '".$word2."' ;" ; // second sql query
 
 $array_of_results = array(	0 => array(),
 							1 => array()); //init results array
@@ -49,9 +49,8 @@ else
 	$array_of_results[$i] = $data_array;
 
 $rowcount += mysqli_num_rows($result); //query error check
- if($rowcount == 0 && $i == $number_of_words){ //no results from all queries
+ if($rowcount == 0 && $i == ($number_of_words-1)){ //no results from all queries
         echo ('No results, sql1 = '.$sql1.", sql2 = ".$sql2);
-		exit(); //check this
     }
 }
 

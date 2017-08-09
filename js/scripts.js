@@ -1,5 +1,11 @@
-// Empty JS for your own code to be here
-
+/**
+ * 
+ * scripts.js 
+ * This file runs all logic for the webpage index.html
+ *
+ */
+ 
+ 
 /**
 * Globals
 * searchTxt1 = 1st word to search for
@@ -11,59 +17,69 @@ var searchTxt1;
 var searchTxt2;
 var chart_types = ["LineChart", "ScatterChart" , "MultiBarChart"];
 var data_info = []; //= [minX, maxX, minY, maxY , groupcolour[] ]
-    
+var words;
+
+/**
+ * Constants
+ * Used mainly for data_info Locations
+ */   
+const minX_LOC = 0;
+const maxX_LOC = 1;
+const minY_LOC = 2;
+const maxY_LOC = 3;
+const colors_LOC = 4;
+
 /**
 * Main search function called from html
 **/
 function runSearch() {
 	searchTxt1 = $("#txtInput1").val();
 	searchTxt2 = $("#txtInput2").val();
+	words = []; //init
+	words.push(searchTxt1 , searchTxt2);
 	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
+	console.log("words[] = " + words);
 	
-	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 	||
+	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 	|| 
 			(searchTxt1.length == 0 && searchTxt2.length > 2) 	||
-			(searchTxt1.length > 2 && searchTxt2.length == 0)	)) {//Check input
-	console.log("bad input");
-	document.getElementById('help_div').style.visibility = 'visible';
-	document.getElementById("help_div").innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
-	return;
+			(searchTxt1.length > 2 && searchTxt2.length == 0)	)) {//Check input. These are all good cases.
+		console.log("bad input");
+		document.getElementById('help_div').style.visibility = 'visible';
+		document.getElementById("help_div").innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
+		return;
 	} 
 	else{
-	document.getElementById('results_div').style.visibility = 'visible';
-	document.getElementById('help_div').style.visibility = 'hidden';
-	console.log("search terms ok");
+		document.getElementById('results_div').style.visibility = 'visible';
+		document.getElementById('help_div').style.visibility = 'hidden';
+		console.log("search terms ok");
 
-	 $.ajax({
-		url : 'searcher.php',
-		type : 'GET',
-		data : { searchWord1:searchTxt1,
-				searchWord2:searchTxt2},
-		dataType : 'json',
-		contentType: "application/json; charset=utf-8",
-		success : function (resultsArr) {
-			
-			if(resultsArr != null){
-				console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
-				console.log("resultArray: ");
-				for(var i =0;i < resultsArr.length ;i++)
-				{
-				var item = resultsArr[i];
-				console.log(item);			
+		$.ajax({
+			url : 'searcher.php',
+			type : 'GET',
+			data : { searchWord1:searchTxt1,
+					searchWord2:searchTxt2},
+			dataType : 'json',
+			contentType: "application/json; charset=utf-8",
+			success : function (resultsArr) {
+				
+				if(resultsArr != null){
+					console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
+					console.log("resultArray: ");
+					for(var i =0;i < resultsArr.length ;i++)
+					{
+					var item = resultsArr[i];
+					console.log(item);			
+					}
+					buildGraph(resultsArr);
 				}
-				
-
-				
-				buildGraph(resultsArr);
-				
+				else{error("ajax data null or undefined");}
+			},
+			error : function () {
+			   alert("error: ajax get error");
 			}
-			else{error("ajax data null or undefined");}
-		},
-		error : function () {
-		   alert("error: ajax get error");
-		}
-    })
-}
+		})
 	}
+}
 
 /**
 *makes data in chart [{x:__ , y: ___} ... {x:__ y: __ }] format
@@ -71,35 +87,31 @@ function runSearch() {
 function getMyDataReady(array) {
 	var series = [];
 	var shapes = ['circle', 'triangle-up', 'cross', 'triangle-down', 'diamond', 'thin-x', 'square'];
+	var colors = ["#cc99ff" , "#63edd6"];
 	for(var i =0; i <array.length; i ++) {
+		//console.log("getGraphData array[i=" + i+"] = " + array[i]);
+		if(array[i].length > 0){ //if any items exist
 		series.push([]);
-		for(var z =0; z <array[i].length; z ++) {
-			//series[i][z] = 0;
+		for(var z =0; z <array[i].length; z ++) {	
 			var item = array[i][z];
-			//console.log(array[i])
 			series[i].push({
 				x: item.year_creation, y: item.num_of_mentions , size: item.num_of_mentions ,shape: shapes[i]
 			});
 		}
-		series[i].sort(function(a, b){return a.x-b.x});
-	}
-	return [
-		{
-			key: searchTxt1,
-			values: series[0],
-			color: "#cc99ff",
-			nonStackable: false
-			
-		},
-		{
-			key: searchTxt2,
-			values: series[1],
-			color: "#63edd6",
-			nonStackable: false
+		series[i].sort(function(a, b){return a.x-b.x}); //sort by year for graph view
 		}
-	];
+	}
+	var ans = [];
+	for(var idx =0; idx <series.length; idx ++) {	
+	ans.push({
+		key: words[idx],
+			values: series[idx],
+			color: colors[idx],
+			nonStackable: false
+	});
+	}
+	return ans;	
 }
-
 
 	/**
 	* buildGraph 
@@ -119,8 +131,7 @@ function getMyDataReady(array) {
 		var svg = d3.select("svg"); //clear current chart
 		svg.selectAll("*").remove(); //clear current chart
 		
-		switch(type_of_chart)
-		{
+		switch(type_of_chart){
 			case "LineChart":
 			createLineChart(graphData);
 			break;
@@ -133,34 +144,12 @@ function getMyDataReady(array) {
 		}
 	}
 
-/*
-Format of data : 
-	[
-		{
-			key: "Series #1",
-			values: [{x: 1, y: 100}, {x: 234, y: 18 } .... ]
-			color: "#0000ff"
-		},
-		{
-			key: "Series #2",
-			values: [{x: 15, y: 30}, {x: 2, y: 1 } .... ]
-			color: "#2ca02c"
-		},
-		...
-		{
-			...
-		}
-	];
-	
-*/
-
 /**
  * Region graph generators
  */
 function createLineChart(data) {
-nv.addGraph(function() {
-		//data_info = [minX, maxX, minY, maxY , groupcolour[] ]
-  var chart = nv.models.lineChart()
+	nv.addGraph(function() {
+	var chart = nv.models.lineChart()
                 .margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
                 .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
                 .duration(350)  //how fast do you want the lines to transition?
@@ -170,7 +159,7 @@ nv.addGraph(function() {
 				.color(data_info[colors_LOC])
 				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
 				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
-  ;
+	;
 
   chart.xAxis     //Chart x-axis settings
       .axisLabel('Year')
@@ -180,12 +169,12 @@ nv.addGraph(function() {
       .axisLabel('Number of Mentions')
       .tickFormat(d3.format('d'));
 
-  /* Done setting the chart up? Time to render it!*/
-  var myData = data;   //You need data...
+  var myData = data;   //Set data
 
+  /* Done setting the chart up, render it!*/
   d3.select('svg')    //Select the <svg> element you want to render the chart in.   
       .datum(myData)         //Populate the <svg> element with chart data...
-      .call(chart);          //Finally, render the chart!
+      .call(chart);          //render the chart!
 
   //Update the chart when window resizes.
   nv.utils.windowResize(function() { chart.update() });
@@ -201,7 +190,7 @@ function createScatterChart(data){
                 .showDistY(true)
                 .duration(350)
                 .color(data_info[colors_LOC])
-				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
+				.forceY([data_info[minY_LOC],data_info[maxY_LOC]]) //set Y axis range
 				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
 				;
 
@@ -213,9 +202,6 @@ function createScatterChart(data){
   //Axis settings
   chart.xAxis.tickFormat(d3.format('.02f'));
   chart.yAxis.tickFormat(d3.format('.02f'));
-
-  //We want to show shapes other than circles.
- // chart.scatter.onlyCircles(false);
 
   var myData = data;
   d3.select("svg")
@@ -238,14 +224,12 @@ function createMultiBarChart(data){
                 .height(height)
                 .stacked(false)
 				.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+                .useInteractiveGuideline(true)  //enable tooltip and guideline
                 .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
                 .showYAxis(true)        //Show the y-axis
                 .showXAxis(true)        //Show the x-axis
 				.color(data_info[colors_LOC])
 				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
-				//.xDomain([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
-				//.tooltip.contentGenerator(function(key) {return '<h3>' + key + '</h3>';})
                 ;
             chart.dispatch.on('renderEnd', function(){
                 console.log('Render Complete');
@@ -270,11 +254,6 @@ function createMultiBarChart(data){
     });
 }
 
-const minX_LOC = 0;
-const maxX_LOC = 1;
-const minY_LOC = 2;
-const maxY_LOC = 3;
-const colors_LOC = 4;
 /**
 * Receives data 
 * Returns [minX, maxX, minY, maxY , groupcolor[] ]
@@ -300,7 +279,6 @@ function getMaxs(data){
 			minY = temp;
 		groupcolor[i] = data[i].color;
   }
-
 	console.log("X: " + minX + "-" + maxX);
 	console.log("X: " + minY + "-" + maxY);
 	return [minX, maxX, minY, maxY , groupcolor];
@@ -350,4 +328,3 @@ function sinAndCos() {
     }
   ];
 }
-
