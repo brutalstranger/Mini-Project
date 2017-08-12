@@ -15,9 +15,10 @@
 */
 var searchTxt1;
 var searchTxt2;
-var chart_types = ["LineChart", "ScatterChart" , "MultiBarChart"];
+var chart_types = ["LineChart", "ScatterChart" , "MultiBarChart" , "sunburstChart"];
 var data_info = []; //= [minX, maxX, minY, maxY , groupcolour[] ]
 var words;
+var type_of_chart; 
 
 /**
  * Constants
@@ -37,6 +38,7 @@ function runSearch() {
 	searchTxt2 = $("#txtInput2").val();
 	words = []; //init
 	words.push(searchTxt1 , searchTxt2);
+	type_of_chart = $("input[type='radio'][name='radio_charts']:checked").val();
 	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
 	console.log("words[] = " + words);
 	
@@ -57,12 +59,14 @@ function runSearch() {
 			url : 'searcher.php',
 			type : 'GET',
 			data : { searchWord1:searchTxt1,
-					searchWord2:searchTxt2},
+					searchWord2:searchTxt2,
+					chart:type_of_chart},
 			dataType : 'json',
 			contentType: "application/json; charset=utf-8",
 			success : function (resultsArr) {
 				
 				if(resultsArr != null){
+					/*debug*/
 					console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
 					console.log("resultArray: ");
 					for(var i =0;i < resultsArr.length ;i++)
@@ -70,6 +74,7 @@ function runSearch() {
 					var item = resultsArr[i];
 					console.log(item);			
 					}
+					/*end debug*/
 					buildGraph(resultsArr);
 				}
 				else{error("ajax data null or undefined");}
@@ -81,34 +86,81 @@ function runSearch() {
 	}
 }
 
+
+
+
 /**
-*makes data in chart [{x:__ , y: ___} ... {x:__ y: __ }] format
+* Recieves an array from query result
+* Returns an array in chart data format: [ {x:__ , y: ___ extra_field:___} ... {x:__ y: __ extra_field:___} ] 
 */
 function getMyDataReady(array) {
+	
 	var series = [];
 	var shapes = ['circle', 'triangle-up', 'cross', 'triangle-down', 'diamond', 'thin-x', 'square'];
-	var colors = ["#cc99ff" , "#63edd6"];
-	for(var i =0; i <array.length; i ++) {
-		//console.log("getGraphData array[i=" + i+"] = " + array[i]);
-		if(array[i].length > 0){ //if any items exist
-		series.push([]);
-		for(var z =0; z <array[i].length; z ++) {	
-			var item = array[i][z];
-			series[i].push({
-				x: item.year, y: item.count , size: item.count ,shape: shapes[i]
-			});
+	var colors = ["#cc99ff" , "#63edd6" , "#FFFF99" , "#3300CC" , "#FF9933" , "#990033"];
+	var ans = [];
+	
+	if(type_of_chart != "sunburstChart"){
+		for(var i =0; i <array.length; i ++) {
+			//console.log("getGraphData array[i=" + i+"] = " + array[i]);
+			if(array[i].length > 0){ //if any items exist
+			series.push([]);
+			for(var z =0; z <array[i].length; z ++) {	
+				var item = array[i][z];
+				series[i].push({
+					x: item.year, y: item.count , size: item.count ,shape: shapes[i], name: item.author
+				});
+			}
+			series[i].sort(function(a, b){return a.x-b.x}); //sort by year for graph view
+			}
 		}
-		series[i].sort(function(a, b){return a.x-b.x}); //sort by year for graph view
+		
+		for(var idx =0; idx <series.length; idx ++) {	
+		ans.push({
+			key: words[idx],
+				values: series[idx],
+				color: colors[idx],
+				nonStackable: false
+		});
 		}
 	}
-	var ans = [];
-	for(var idx =0; idx <series.length; idx ++) {	
-	ans.push({
-		key: words[idx],
-			values: series[idx],
-			color: colors[idx],
-			nonStackable: false
-	});
+	else{ //sunburst , array received was sorted at server side array[0] > array[1] > ... > array[9]
+		var tiers = [ 1 , 2 , 4 ];//, 8 , 16]; //used for levels
+		var children = []; //arrays of children by tiers
+		var idx = 0;
+		var num_in_tier = 0;
+		data_info[colors_LOC] = colors;
+		//var item;
+		for(var i =0; i <array.length; i ++) { //for each word results
+			if(array[i].length > 0){ //check
+				for(var q = 0 ; q < tiers.length; q++){ //sort into tiers
+					children.push([]);
+					//var children_tier = [];
+					num_in_tier = tiers[q]; //init number of elements in tier
+					while(num_in_tier>0){
+						//item = array[i][idx];
+						if(q == tiers.length-1)
+							children[q].push({name: array[i][idx].word , value: array[i][idx].count}); //no children for last level
+						else
+							children[q].push({name: array[i][idx].word , value: array[i][idx].count , children:[]});
+						num_in_tier--;
+						idx++;
+					}
+				}
+				for(var x = children.length-2 ; x >= 0 ; x--){ //for all tier groups
+					var idx = 0 ;
+					var chunk = 0;
+					for(var y = 0 ; y < children[x].length ; y++ ){ //add 2 children to each item
+						children[x][y].children.push(children[x+1][chunk*2 + idx]);
+						idx++;
+						children[x][y].children.push(children[x+1][chunk*2 + idx]);
+						idx = 0;
+						chunk++;
+					}
+				}
+			}
+		}
+		ans = children[0];
 	}
 	return ans;	
 }
@@ -126,8 +178,10 @@ function getMyDataReady(array) {
 		var graphData = getMyDataReady(resultsArr);
 		for(var t=0 ; t < graphData.length ; t++)
 			console.log("graphData["+ t + "] = %o" ,graphData[t]);			
-		var type_of_chart = $("input[type='radio'][name='radio_charts']:checked").val();
-		data_info = getMaxs(graphData); //data_info = [minX, maxX, minY, maxY , groupcolor[] ]
+		
+		if(type_of_chart != "sunburstChart")
+			data_info = getMaxs(graphData); //data_info = [minX, maxX, minY, maxY , groupcolor[] ]
+		
 		var svg = d3.select("svg"); //clear current chart
 		svg.selectAll("*").remove(); //clear current chart
 		
@@ -141,12 +195,36 @@ function getMyDataReady(array) {
 			case "MultiBarChart":
 			createMultiBarChart(graphData);
 			break;
+			case "sunburstChart":
+			createSunburstChart(graphData);
+			break;
 		}
 	}
 
 /**
  * Region graph generators
  */
+ 
+function createSunburstChart(data) { 
+    var chart;
+    nv.addGraph(function() {
+        chart = nv.models.sunburstChart();
+        chart.color(data_info[colors_LOC]);
+		chart.mode("value")
+
+        d3.select("svg")
+                .datum(data)
+                .call(chart);
+				
+		//chart.showTooltipPercent(true);
+		chart.labelFormat(function(d){ return d.name + " : " + d.size;})
+		chart.showLabels(true);
+        nv.utils.windowResize(chart.update);
+        return chart;
+    });
+}
+
+
 function createLineChart(data) {
 	nv.addGraph(function() {
 	var chart = nv.models.lineChart()
@@ -174,10 +252,12 @@ function createLineChart(data) {
   /* Done setting the chart up, render it!*/
   d3.select('svg')    //Select the <svg> element you want to render the chart in.   
       .datum(myData)         //Populate the <svg> element with chart data...
+	  .transition().duration(500)
       .call(chart);          //render the chart!
 
   //Update the chart when window resizes.
   nv.utils.windowResize(function() { chart.update() });
+
   return chart;
 });
 }
@@ -194,15 +274,22 @@ function createScatterChart(data){
 				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
 				;
 
-  //Configure how the tooltip looks.
-  chart.tooltip.contentGenerator(function(key) {
-      return '<h3>' + key + '</h3>';
-  });
-
   //Axis settings
-  chart.xAxis.tickFormat(d3.format('.02f'));
-  chart.yAxis.tickFormat(d3.format('.02f'));
+   chart.xAxis     //Chart x-axis settings
+      .axisLabel('Year')
+      .tickFormat(d3.format('d'));
 
+  chart.yAxis     //Chart y-axis settings
+      .axisLabel('Number of Mentions')
+      .tickFormat(d3.format('d'));
+
+	    //Configure how the tooltip looks. 
+		//Default: use YAxis
+  chart.tooltip.contentGenerator(function(key) {
+	  console.log(key);
+      return '<h3>' + key.value + '</h3>';
+  });
+	  
   var myData = data;
   d3.select("svg")
       .datum(myData)
@@ -231,6 +318,15 @@ function createMultiBarChart(data){
 				.color(data_info[colors_LOC])
 				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
                 ;
+			
+  chart.xAxis     //Chart x-axis settings
+      .axisLabel('Year')
+      .tickFormat(d3.format('d'));
+
+  chart.yAxis     //Chart y-axis settings
+      .axisLabel('Number of Mentions')
+      .tickFormat(d3.format('d'));			
+			
             chart.dispatch.on('renderEnd', function(){
                 console.log('Render Complete');
             });
