@@ -41,20 +41,20 @@ function runSearch() {
 	type_of_chart = $("input[type='radio'][name='radio_charts']:checked").val();
 	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
 	console.log("words[] = " + words);
+	document.getElementById('help_div').innerHTML = "";
+	document.getElementById('results_div').style.visibility = 'hidden';
+	document.getElementById('help_div').style.visibility = 'hidden';
 	
 	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 	|| 
 			(searchTxt1.length == 0 && searchTxt2.length > 2) 	||
 			(searchTxt1.length > 2 && searchTxt2.length == 0)	)) {//Check input. These are all good cases.
 		console.log("bad input");
+		document.getElementById('help_div').innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
 		document.getElementById('help_div').style.visibility = 'visible';
-		document.getElementById("help_div").innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
 		return;
 	} 
 	else{
-		document.getElementById('results_div').style.visibility = 'visible';
-		document.getElementById('help_div').style.visibility = 'hidden';
 		console.log("search terms ok");
-
 		$.ajax({
 			url : 'searcher.php',
 			type : 'GET',
@@ -64,20 +64,28 @@ function runSearch() {
 			dataType : 'json',
 			contentType: "application/json; charset=utf-8",
 			success : function (resultsArr) {
-				
-				if(resultsArr != null){
-					/*debug*/
-					console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
-					console.log("resultArray: ");
-					for(var i =0;i < resultsArr.length ;i++)
-					{
-					var item = resultsArr[i];
-					console.log(item);			
-					}
-					/*end debug*/
-					buildGraph(resultsArr);
+				if(jQuery.isEmptyObject(resultsArr)){ //no results
+					console.log("query returned no results");
+					document.getElementById('help_div').innerHTML = "No results found.";
+					document.getElementById('help_div').style.visibility = 'visible';
 				}
-				else{error("ajax data null or undefined");}
+				else{ //results exist
+					if(resultsArr != null){
+						document.getElementById('help_div').style.visibility = 'hidden';
+						document.getElementById('results_div').style.visibility = 'visible';
+						/*debug*/
+						console.log("json valid? " + IsJsonString(JSON.stringify(resultsArr)));
+						console.log("resultArray: ");
+						for(var i =0;i < resultsArr.length ;i++)
+						{
+						var item = resultsArr[i];
+						console.log(item);			
+						}
+						/*end debug*/
+						buildGraph(resultsArr);
+					}
+					else{error("ajax data null or undefined");}
+				}
 			},
 			error : function () {
 			   alert("error: ajax get error");
@@ -86,15 +94,11 @@ function runSearch() {
 	}
 }
 
-
-
-
 /**
 * Recieves an array from query result
 * Returns an array in chart data format: [ {x:__ , y: ___ extra_field:___} ... {x:__ y: __ extra_field:___} ] 
 */
 function getMyDataReady(array) {
-	
 	var series = [];
 	var shapes = ['circle', 'triangle-up', 'cross', 'triangle-down', 'diamond', 'thin-x', 'square'];
 	var colors = ["#cc99ff" , "#63edd6" , "#FFFF99" , "#3300CC" , "#FF9933" , "#990033"];
@@ -182,6 +186,9 @@ function getMyDataReady(array) {
 		if(type_of_chart != "sunburstChart")
 			data_info = getMaxs(graphData); //data_info = [minX, maxX, minY, maxY , groupcolor[] ]
 		
+		var t = d3.select('svg.tooltip');
+		//.remove();
+		
 		var svg = d3.select("svg"); //clear current chart
 		svg.selectAll("*").remove(); //clear current chart
 		
@@ -206,9 +213,9 @@ function getMyDataReady(array) {
  */
  
 function createSunburstChart(data) { 
-    var chart;
+    
     nv.addGraph(function() {
-        chart = nv.models.sunburstChart();
+		var chart = nv.models.sunburstChart();
         chart.color(data_info[colors_LOC]);
 		chart.mode("value")
 
@@ -216,7 +223,6 @@ function createSunburstChart(data) {
                 .datum(data)
                 .call(chart);
 				
-		//chart.showTooltipPercent(true);
 		chart.labelFormat(function(d){ return d.name + " : " + d.size;})
 		chart.showLabels(true);
         nv.utils.windowResize(chart.update);
@@ -227,33 +233,43 @@ function createSunburstChart(data) {
 
 function createLineChart(data) {
 	nv.addGraph(function() {
+	var width = nv.utils.windowSize().width,
+	height = nv.utils.windowSize().height;
 	var chart = nv.models.lineChart()
                 .margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-                .useInteractiveGuideline(true)  //We want nice looking tooltips and a guideline!
+				.width(width)
+				.height(height)
                 .duration(350)  //how fast do you want the lines to transition?
                 .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
                 .showYAxis(true)        //Show the y-axis
                 .showXAxis(true)        //Show the x-axis
 				.color(data_info[colors_LOC])
 				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
-				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
-	;
+				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]); //set X axis range
+	
+				var num_format = d3.format('d');
 
-  chart.xAxis     //Chart x-axis settings
-      .axisLabel('Year')
-      .tickFormat(d3.format('d'));
+			  chart.xAxis     //Chart x-axis settings
+				  .axisLabel('Year')
+				  .tickFormat(num_format);
 
-  chart.yAxis     //Chart y-axis settings
-      .axisLabel('Number of Mentions')
-      .tickFormat(d3.format('d'));
+			  chart.yAxis     //Chart y-axis settings
+				  .axisLabel('Number of Mentions')
+				  .tickFormat(num_format);
 
-  var myData = data;   //Set data
+			  var myData = data;   //Set data
 
-  /* Done setting the chart up, render it!*/
-  d3.select('svg')    //Select the <svg> element you want to render the chart in.   
-      .datum(myData)         //Populate the <svg> element with chart data...
-	  .transition().duration(500)
-      .call(chart);          //render the chart!
+			  /* Done setting the chart up, render it!*/
+			  d3.select('svg')    //Select the <svg> element you want to render the chart in.   
+			  .datum(myData)         //Populate the <svg> element with chart data...
+			  .transition().duration(500);
+			  
+			//chart.useInteractiveGuideline(true) ; //Add tooltip after data
+			chart.tooltip.contentGenerator(function(key) {
+				  return '<h3>' + num_format(key.point.x) + ' , ' + num_format(key.point.y) + '</h3>';
+				});
+  
+    d3.select('svg').call(chart);          //render the chart!
 
   //Update the chart when window resizes.
   nv.utils.windowResize(function() { chart.update() });
@@ -264,31 +280,39 @@ function createLineChart(data) {
 
 function createScatterChart(data){
 	nv.addGraph(function() {
-  var chart = nv.models.scatterChart()
+	var width = nv.utils.windowSize().width,
+	height = nv.utils.windowSize().height;
+	var chart = nv.models.scatterChart()
 				.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
                 .showDistX(true)    //showDist, when true, will display those little distribution lines on the axis.
                 .showDistY(true)
+				.width(width)
+				.height(height)
                 .duration(350)
                 .color(data_info[colors_LOC])
-				.forceY([data_info[minY_LOC],data_info[maxY_LOC]]) //set Y axis range
+				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
 				.forceX([data_info[minX_LOC],data_info[maxX_LOC]]) //set X axis range
 				;
 
-  //Axis settings
-   chart.xAxis     //Chart x-axis settings
-      .axisLabel('Year')
-      .tickFormat(d3.format('d'));
+				var num_format = d3.format('d');
 
-  chart.yAxis     //Chart y-axis settings
-      .axisLabel('Number of Mentions')
-      .tickFormat(d3.format('d'));
+			  //Axis settings
+			   chart.xAxis     //Chart x-axis settings
+				  .axisLabel('Year')
+				  .tickFormat(num_format);
 
-	    //Configure how the tooltip looks. 
-		//Default: use YAxis
-  chart.tooltip.contentGenerator(function(key) {
-	  console.log(key);
-      return '<h3>' + key.value + '</h3>';
+			  chart.yAxis     //Chart y-axis settings
+				  .axisLabel('Number of Mentions')
+				  .tickFormat(num_format);
+
+					//Configure how the tooltip looks. 
+					//Default: use YAxis
+			  chart.tooltip.contentGenerator(function(key) {
+				  console.log(key);
+				  return '<h3>' + num_format(key.point.y) + '</h3>';
   });
+  
+  //chart.tooltip.valueFormatter('d');
 	  
   var myData = data;
   d3.select("svg")
@@ -303,44 +327,52 @@ function createScatterChart(data){
 }
 function createMultiBarChart(data){
  nv.addGraph({
-        generate: function() {
-            var width = nv.utils.windowSize().width,
-                height = nv.utils.windowSize().height;
-            var chart = nv.models.multiBarChart()
-                .width(width)
-                .height(height)
-                .stacked(false)
-				.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
-                .useInteractiveGuideline(true)  //enable tooltip and guideline
-                .showLegend(true)       //Show the legend, allowing users to turn on/off line series.
-                .showYAxis(true)        //Show the y-axis
-                .showXAxis(true)        //Show the x-axis
-				.color(data_info[colors_LOC])
-				.forceY([0,data_info[maxY_LOC]]) //set Y axis range
-                ;
+    generate: 
+	function() {
+		var num_format = d3.format('d');
+		var width = nv.utils.windowSize().width,
+		height = nv.utils.windowSize().height;
+		var chart = nv.models.multiBarChart()
+		.margin({top: 20, right: 20, bottom: 20, left: 100})  //Adjust chart margins to give the x-axis some breathing room.
+		.width(width)
+		.height(height)
+		.stacked(false)
+		.showLegend(true)       //Show the legend, allowing users to turn on/off line series.
+		.showYAxis(true)        //Show the y-axis
+		.showXAxis(true)        //Show the x-axis
+		.color(data_info[colors_LOC])
+		.forceY([0,data_info[maxY_LOC]]) //set Y axis range
+		chart.showControls(false)
+		;
 			
-  chart.xAxis     //Chart x-axis settings
-      .axisLabel('Year')
-      .tickFormat(d3.format('d'));
+		chart.xAxis     //Chart x-axis settings
+			.axisLabel('Year')
+			.tickFormat(num_format);
 
-  chart.yAxis     //Chart y-axis settings
-      .axisLabel('Number of Mentions')
-      .tickFormat(d3.format('d'));			
+		chart.yAxis     //Chart y-axis settings
+			.axisLabel('Number of Mentions')
+			.tickFormat(num_format);			
 			
-            chart.dispatch.on('renderEnd', function(){
-                console.log('Render Complete');
+        chart.dispatch.on('renderEnd', function(){
+		console.log('Render Complete');
             });
-            var svg = d3.select('svg').datum(data);
-            console.log('calling chart');
-            svg.transition().duration(0).call(chart);
-            return chart;
+        var svg = d3.select('svg').datum(data);
+		//chart.useInteractiveGuideline(true)  //enable tooltip and guideline
+		chart.tooltip.contentGenerator(function(key) {
+			var num_format = d3.format('d');
+			console.log(key);
+			return '<h3>' + num_format(key.data.y) + '</h3>';
+			});
+		console.log('calling chart');
+		svg.transition().duration(0).call(chart);
+		return chart;
         },
         callback: function(graph) {
             nv.utils.windowResize(function() {
                 var width = nv.utils.windowSize().width;
                 var height = nv.utils.windowSize().height;
                 graph.width(width).height(height);
-                d3.select('#test1 svg')
+                d3.select('svg')
                     .attr('width', width)
                     .attr('height', height)
                     .transition().duration(0)

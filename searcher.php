@@ -41,9 +41,6 @@ for($a = 0; $a<$number_of_search_terms; $a++)
 	}
 	else{
 		$sql[$a]="SELECT * FROM ".$db_table." WHERE word = '".$searchWords[$a]."';" ; //  sql query
-		//$sql[a]="SELECT * FROM ".$db_table." WHERE word = '".$word2."' ;" ; // second sql query
-		//$sql1="SELECT * FROM mini.word_ext WHERE word = '".$word1."';" ; // first sql query
-		//$sql2="SELECT * FROM mini.word_ext WHERE word = '".$word2."' ;" ; // second sql query
 	}
 }
 
@@ -76,7 +73,8 @@ for($i = 0 ; $i<$number_of_search_terms ; $i++){
 
 $rowcount += mysqli_num_rows($result); //query error check
  if($rowcount == 0 && $i == ($number_of_search_terms-1)){ //no results from all queries
-        echo ('No results, sql1 = '.$sql[0].", sql2 = ".$sql[1]);
+	$array_of_results =  new stdClass();
+        //echo ('No results, sql1 = '.$sql[0].", sql2 = ".$sql[1]);
     }
 }
 
