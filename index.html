@@ -88,13 +88,13 @@ class="icon-bar"></span>
 				<p>
 					<input class="form-control" type="text" id="txtInput1" >
 					<input class="form-control" type="text" id="txtInput2" >
-					 <input type="checkbox" id="ngram_check">ngram<br>
+					 <input type="checkbox" id="ngram_check" onclick="changeNgramMode(this)">ngram<br>
 					<button type="button"  class="btn btn-default"  onclick="runSearch()">Submit</button>
 					</br>
 					Line Chart: 				<input class="form-control" type="radio"  name="radio_charts" value="LineChart" checked="checked">
 					Scatter Chart: 				<input class="form-control" type="radio"  name="radio_charts" value="ScatterChart">	
 					MultiBar Chart: 			<input class="form-control" type="radio"  name="radio_charts" value="MultiBarChart">	
-					SunBurst Chart(by Author): 	<input class="form-control" type="radio"  name="radio_charts" value="sunburstChart">	
+					SunBurst Chart(by Author): 	<input class="form-control" type="radio"  name="radio_charts" value="sunburstChart" id="chrt_sunburst" >	
 				</p>
 				</div>
 			 </form>
