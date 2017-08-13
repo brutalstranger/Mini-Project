@@ -25,7 +25,7 @@ if($ngram == "true"){
 	//$check = 1;
 }
 else{
-	$check=0;
+	//$check=0;
 	if($word1 != "")
 		array_push($searchWords,$word1);
 	if($word2 != "")
