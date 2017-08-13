@@ -19,6 +19,7 @@ var chart_types = ["LineChart", "ScatterChart" , "MultiBarChart" , "sunburstChar
 var data_info = []; //= [minX, maxX, minY, maxY , groupcolour[] ]
 var words;
 var type_of_chart; 
+var ngram_mode;
 
 /**
  * Constants
@@ -30,6 +31,21 @@ const minY_LOC = 2;
 const maxY_LOC = 3;
 const colors_LOC = 4;
 
+function changeNgramMode(checkbox){
+	var state = checkbox.checked;
+	if(state){
+		document.getElementById("txtInput2").disabled = true;
+		document.getElementById("chrt_sunburst").disabled = true;
+		document.getElementById('help_div').innerHTML = "Search terms need to be filled in first textbox seperated by commas. </br> Note: spaces will be ignored.";
+		document.getElementById('help_div').style.visibility = 'visible';
+	}
+	else{
+		document.getElementById("txtInput2").disabled = false;
+		document.getElementById("chrt_sunburst").disabled = false;
+		document.getElementById('help_div').innerHTML = "";
+		document.getElementById('help_div').style.visibility = 'hidden';
+	}
+}
 
 /**
 * Main search function called from html
@@ -37,23 +53,34 @@ const colors_LOC = 4;
 function runSearch() {
 	searchTxt1 = $("#txtInput1").val();
 	searchTxt2 = $("#txtInput2").val();
-	words = []; //init
-	words.push(searchTxt1 , searchTxt2);
+	ngram_mode = document.getElementById("ngram_check").checked;
 	type_of_chart = $("input[type='radio'][name='radio_charts']:checked").val();
+	
 	console.log("js: started runSearch with strTxt1 = " + searchTxt1 + ", strTxt2 = " + searchTxt2);
-	console.log("words[] = " + words);
 	document.getElementById('help_div').innerHTML = "";
 	document.getElementById('results_div').style.visibility = 'hidden';
 	document.getElementById('help_div').style.visibility = 'hidden';
-	
-	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 	|| 
-			(searchTxt1.length == 0 && searchTxt2.length > 2) 	||
-			(searchTxt1.length > 2 && searchTxt2.length == 0)	)) {//Check input. These are all good cases.
+	words = [];//init
+	if(ngram_mode){//dynamic build of words[]
+		var str = searchTxt1.replace(/\s/g, "");
+		words =  str.split(",");
+	}
+	else{
+		if(searchTxt1!="")
+			words.push(searchTxt1);
+		if(searchTxt2!="")
+			words.push(searchTxt2);
+	}
+	console.log("words[] = " + words);
+	if(!(	(searchTxt1.length > 2 && searchTxt2.length > 2) 					|| 
+			(searchTxt1.length == 0 && searchTxt2.length > 2 && !ngram_mode)  	||
+			(searchTxt1.length > 2 && searchTxt2.length == 0)))
+			{//Check input. These are all good cases. AND must NOT be ngram mode
 		console.log("bad input");
 		document.getElementById('help_div').innerHTML = "Search terms needs to be at least 3 characters. </br> Note: it is possible to fill in only one textbox.";
 		document.getElementById('help_div').style.visibility = 'visible';
 		return;
-	} 
+	}
 	else{
 		console.log("search terms ok");
 		$.ajax({
@@ -62,7 +89,7 @@ function runSearch() {
 			data : { searchWord1:searchTxt1,
 					searchWord2:searchTxt2,
 					chart:type_of_chart,
-					ngram: document.getElementById("ngram_check").checked }, //if ngram=true => php side parses words from a string(searchTxt1). format: w1,w2, ... ,wk 
+					ngram: ngram_mode }, //if ngram=true => php side parses words from a string(searchTxt1). format: w1,w2, ... ,wk 
 			dataType : 'json',
 			contentType: "application/json; charset=utf-8",
 			success : function (resultsArr) {
