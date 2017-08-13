@@ -30,6 +30,7 @@ const minY_LOC = 2;
 const maxY_LOC = 3;
 const colors_LOC = 4;
 
+
 /**
 * Main search function called from html
 **/
@@ -60,7 +61,8 @@ function runSearch() {
 			type : 'GET',
 			data : { searchWord1:searchTxt1,
 					searchWord2:searchTxt2,
-					chart:type_of_chart},
+					chart:type_of_chart,
+					ngram: document.getElementById("ngram_check").checked }, //if ngram=true => php side parses words from a string(searchTxt1). format: w1,w2, ... ,wk 
 			dataType : 'json',
 			contentType: "application/json; charset=utf-8",
 			success : function (resultsArr) {
